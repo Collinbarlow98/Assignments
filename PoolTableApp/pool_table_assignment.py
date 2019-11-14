@@ -1,5 +1,9 @@
 
 import datetime
+import json
+
+pooltables = []
+pt_object_array = []
 
 class PoolTable:
   def __init__(self,tablenumber):
@@ -25,20 +29,21 @@ class PoolTable:
     total_cost = self.total_time_played.total_seconds() / 60 / 60 * 30
     print(total_cost, "Dollars")
 
-table1 = PoolTable(1)
-table2 = PoolTable(2)
-table3 = PoolTable(3)
-table4 = PoolTable(4)
-table5 = PoolTable(5)
-table6 = PoolTable(6)
-table7 = PoolTable(7)
-table8 = PoolTable(8)
-table9 = PoolTable(9)
-table10 = PoolTable(10)
-table11 = PoolTable(11)
-table12 = PoolTable(12)
+def crash_protection():
+    with open('crashprotection.json') as file_object:
+        pt_object_array = json.load(file_object)
+        for index in range(0,len(pt_object_array)):
+            pt_object = pt_object_array[index]
+            for key in pt_object:
+                pooltables[pt_object["tablenumber"] - 1].tablenumber = pt_object["tablenumber"]
+                pooltables[pt_object["tablenumber"] - 1].start_time = datetime.datetime.strptime(pt_object["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+                pooltables[pt_object["tablenumber"] - 1].is_available = pt_object["is_available"]
 
-pooltables = [table1,table2,table3,table4,table5,table6,table7,table8,table9,table10,table11,table12]
+for index in range(1,13):
+        pool_table = PoolTable(index)
+        pooltables.append(pool_table)
+
+crash_protection()
 
 while True:
 
@@ -57,8 +62,17 @@ while True:
 
   if choice == "1":
     print("Enter Table Number To Check Out")
-    pooltables[int(input("Enter Number: ")) - 1].check_out()
+    tablenoco = int(input("Enter Number: "))
+    pooltables[tablenoco - 1].check_out()
     print("--------------------------------------")
+    pt_object = {
+    "tablenumber": pooltables[tablenoco - 1].tablenumber,
+    "start_time":  str(pooltables[tablenoco - 1].start_time),
+    "is_available": pooltables[tablenoco - 1].is_available,
+    }
+    pt_object_array.append(pt_object)
+    with open('crashprotection.json', 'w') as file_object:
+        json.dump(pt_object_array,file_object)
   elif choice == "2":
     print("Enter Table Number To Check In")
     tableno = int(input("Enter Number: ")) - 1
@@ -90,6 +104,15 @@ while True:
     choice3 = input("Enter Q To Quit or Anything Else To Continue: ").upper()
 
     if choice3 == "Q":
-      break
+        cp = {}
+        with open('crashprotection.json','w') as file_object:
+            json.dump(cp,file_object)
+        break
     else:
       pass
+
+# If the app crashes, have the app read a text file and set up the tables again
+# first set up a text file at check out to mark down the start time
+# then have the app check that file to see if there are any previously open tables
+# then input the start time from those tables
+# make the information into a dictionary so that json can dump
