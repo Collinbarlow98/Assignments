@@ -1,6 +1,17 @@
 
 import datetime
 import json
+import email, smtplib, ssl
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+subject = "An email with attachment from Pool Tables"
+body = "This is an email with attachment sent from Pool Tables"
+sender_email = "practiceemailforcode@gmail.com"
+receiver_email = "practiceemailforcode@gmail.com"
+now = datetime.datetime.now()
 
 pooltables = []
 pt_object_array = []
@@ -12,6 +23,7 @@ class PoolTable:
     self.end_time = 0
     self.is_available = True
     self.total_time_played = 0
+    self.total_cost = 0
 
   def check_out(self):
     if self.is_available == True:
@@ -26,8 +38,7 @@ class PoolTable:
 
   def calculate_total(self):
     self.total_time_played = self.end_time - self.start_time
-    total_cost = self.total_time_played.total_seconds() / 60 / 60 * 30
-    print(total_cost, "Dollars")
+    self.total_cost = self.total_time_played.total_seconds() / 60 / 60 * 30
 
 def crash_protection():
     with open('crashprotection.json') as file_object:
@@ -38,6 +49,39 @@ def crash_protection():
                 pooltables[pt_object["tablenumber"] - 1].tablenumber = pt_object["tablenumber"]
                 pooltables[pt_object["tablenumber"] - 1].start_time = datetime.datetime.strptime(pt_object["start_time"], '%Y-%m-%d %H:%M:%S.%f')
                 pooltables[pt_object["tablenumber"] - 1].is_available = pt_object["is_available"]
+
+#ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1056)
+#def send_final_report():
+    #now = datetime.datetime.now()
+    #password = input("Type your password and press enter: ")
+    #message = MIMEMultipart()
+    #message["From"] = sender_email
+    #message["To"] = receiver_email
+    #message["Subject"] = subject
+    #message["Bcc"] = receiver_email
+
+    #message.attach(MIMEText(body, "plain"))
+
+    #filename = f'{now.year}-{now.month}-{now.day}.txt'
+
+    #with open(filename, "rb") as attachment:
+        #part = MIMEBase("application", "octet-stream")
+        #part.set_payload(attachment.read())
+
+    #encoders.encode_base64(part)
+
+    #part.add_header(
+        #"Content-Disposition",
+        #f"attachment; filename= {filename}",
+    #)
+
+    #message.attach(part)
+    #text = message.as_string()
+
+    #context = ssl.create_default_context()
+    #with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        #server.login(sender_email, password)
+        #server.sendmail(sender_email, receiver_email, text)
 
 for index in range(1,13):
         pool_table = PoolTable(index)
@@ -79,8 +123,9 @@ while True:
     if pooltables[tableno].is_available is False:
       pooltables[tableno].check_in()
       pooltables[tableno].calculate_total()
+      print(round(pooltables[tableno].total_cost, 2), "Dollars")
       print("--------------------------------------")
-      with open('11-12-2019.txt', 'a') as file_object:
+      with open(f'{now.year}-{now.month}-{now.day}.txt', 'a') as file_object:
           file_object.write("Table Number: ")
           file_object.write(str(pooltables[tableno].tablenumber))
           file_object.write('\r')
@@ -107,6 +152,11 @@ while True:
         cp = {}
         with open('crashprotection.json','w') as file_object:
             json.dump(cp,file_object)
+        #choice4 = input("Would You Like An Email Of The Final Report? Enter Yes or No: ").upper()
+        #if choice4 == "YES":
+            #send_final_report()
+        #else:
+            #pass
         break
     else:
       pass
