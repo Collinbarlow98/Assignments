@@ -50,9 +50,9 @@ def crash_protection():
 def send_final_report():
     subject = "An email with attachment from Pool Tables"
     body = "This is an email with attachment sent from Pool Tables"
-    sender_email = "practiceemailforcode@gmail.com"
-    receiver_email = "practiceemailforcode@gmail.com"
+    sender_email = input("Enter the address to send report: ")
     password = input("Type your password and press enter: ")
+    receiver_email = input("Enter the address to recieve report: ")
     report = f'{now.year}-{now.month}-{now.day}.txt'
     smtp_server = "smtp.gmail.com"
     port = 587
