@@ -1,16 +1,13 @@
 
 import datetime
 import json
-import email, smtplib, ssl
+import smtplib, ssl
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate
 
-subject = "An email with attachment from Pool Tables"
-body = "This is an email with attachment sent from Pool Tables"
-sender_email = "practiceemailforcode@gmail.com"
-receiver_email = "practiceemailforcode@gmail.com"
 now = datetime.datetime.now()
 
 pooltables = []
@@ -50,38 +47,37 @@ def crash_protection():
                 pooltables[pt_object["tablenumber"] - 1].start_time = datetime.datetime.strptime(pt_object["start_time"], '%Y-%m-%d %H:%M:%S.%f')
                 pooltables[pt_object["tablenumber"] - 1].is_available = pt_object["is_available"]
 
-#ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1056)
-#def send_final_report():
-    #now = datetime.datetime.now()
-    #password = input("Type your password and press enter: ")
-    #message = MIMEMultipart()
-    #message["From"] = sender_email
-    #message["To"] = receiver_email
-    #message["Subject"] = subject
-    #message["Bcc"] = receiver_email
+def send_final_report():
+    subject = "An email with attachment from Pool Tables"
+    body = "This is an email with attachment sent from Pool Tables"
+    sender_email = "practiceemailforcode@gmail.com"
+    receiver_email = "practiceemailforcode@gmail.com"
+    password = input("Type your password and press enter: ")
+    report = f'{now.year}-{now.month}-{now.day}.txt'
+    smtp_server = "smtp.gmail.com"
+    port = 587
 
-    #message.attach(MIMEText(body, "plain"))
+    message = MIMEMultipart()
+    message["Subject"] = subject
+    message["From"] = sender_email
+    message["To"] = receiver_email
 
-    #filename = f'{now.year}-{now.month}-{now.day}.txt'
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload(open(f'{report}', 'rb').read())
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition",f"attachment; filename= {report}",)
+    message.attach(part)
 
-    #with open(filename, "rb") as attachment:
-        #part = MIMEBase("application", "octet-stream")
-        #part.set_payload(attachment.read())
-
-    #encoders.encode_base64(part)
-
-    #part.add_header(
-        #"Content-Disposition",
-        #f"attachment; filename= {filename}",
-    #)
-
-    #message.attach(part)
-    #text = message.as_string()
-
-    #context = ssl.create_default_context()
-    #with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        #server.login(sender_email, password)
-        #server.sendmail(sender_email, receiver_email, text)
+    try:
+        server = smtplib.SMTP(smtp_server,port)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message.as_string())
+        server.quit()
+    except SMTPException as error:
+        print("Error")
 
 for index in range(1,13):
         pool_table = PoolTable(index)
@@ -90,7 +86,6 @@ for index in range(1,13):
 crash_protection()
 
 while True:
-
   for index in range(0,len(pooltables)):
       print("Table", pooltables[index].tablenumber)
       if pooltables[index].is_available == True:
@@ -98,7 +93,6 @@ while True:
       else:
         print("OCCUPIED", pooltables[index].start_time, datetime.datetime.now() - pooltables[index].start_time)
   print("--------------------------------------")
-
   print("Press 1 To Check Out A Table")
   print("Press 2 To Check In A Table")
   choice = input("Enter Your Choice: ")
@@ -139,30 +133,23 @@ while True:
           file_object.write(str(pooltables[tableno].total_time_played))
           file_object.write('\r')
           file_object.write("Total Cost: ")
-          file_object.write(str(pooltables[tableno].total_time_played.total_seconds() / 60 / 60 * 30))
+          file_object.write(str(round(pooltables[tableno].total_time_played.total_seconds() / 60 / 60 * 30, 2)))
           file_object.write(" Dollars")
           file_object.write('\r')
     else:
       print("Table Number", pooltables[tableno].tablenumber, "Is Checked In")
       print("--------------------------------------")
   else:
-    choice3 = input("Enter Q To Quit or Anything Else To Continue: ").upper()
-
-    if choice3 == "Q":
+    choice_quit = input("Enter Q To Quit or Anything Else To Continue: ").upper()
+    if choice_quit == "Q":
         cp = {}
         with open('crashprotection.json','w') as file_object:
             json.dump(cp,file_object)
-        #choice4 = input("Would You Like An Email Of The Final Report? Enter Yes or No: ").upper()
-        #if choice4 == "YES":
-            #send_final_report()
-        #else:
-            #pass
+        choice_email = input("Would You Like An Email Of The Final Report? Enter Yes or No: ").upper()
+        if choice_email == "YES":
+            send_final_report()
+        else:
+            pass
         break
     else:
       pass
-
-# If the app crashes, have the app read a text file and set up the tables again
-# first set up a text file at check out to mark down the start time
-# then have the app check that file to see if there are any previously open tables
-# then input the start time from those tables
-# make the information into a dictionary so that json can dump
